@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<head>
+	<title>inputEmoji demo page</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src="https://code.jquery.com/jquery-3.4.1.js"></script>
+	<script src='mapzoom.js'></script>
+	<script>
+		$(function () {
+			$('.map').mapzoom({fixSize: true, debug: true, maxZoom: 400});
+			$(".zoomin").on("click", function(){
+				$('.map').mapzoom("zoomin");
+			});
+			$(".zoomout").on("click", function(){
+				$('.map').mapzoom("zoomout");
+			});
+		})
+	</script>
+	<style>
+		.map {
+			width: 80%;
+			height: 612px;
+		}
+	</style>
+	
+</head>
+<body>
+		<button class="btn zoomin">+</button>
+		<button class="btn zoomout">-</button><br>
+		<div class="map">
+			<img src="http://parking.dvlg.ru/svg/level1.svg"/>
+		</div>
+</body>
+</html>
