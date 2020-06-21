@@ -43,7 +43,7 @@
 			function init() {
 
 				$cont = $("<div class='mapzoom_cont'>");
-				$("*", $wrap).appendTo($cont);
+				$wrap.children().appendTo($cont);
 				$cont.appendTo($wrap);
 				$wrap.prop("has_mapzoom", true);
 
