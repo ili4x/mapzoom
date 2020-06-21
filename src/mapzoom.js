@@ -1,7 +1,6 @@
 (function ($) {
 	$.fn.mapzoom = function (params) {
 		var defaults = {
-			fixSize: false,
 			maxZoom: 300,
 			debug: false
 		};
@@ -18,12 +17,12 @@
 			var $wrap = $(element);
 			var $cont, oldX, oldY, startEvent;
 
-			if (typeof params == "string") {
+			if (typeof params === "string") {
 				//Обработка комманты
 
 				if (!$wrap.prop("has_mapzoom")) {
 					//вызов на неинициализированом объекте
-					console.error("mapzoom caller on not initialized element!", element);
+					console.error("mapzoom called on not initialized element!", element);
 					return;
 				}
 
@@ -31,10 +30,10 @@
 				$cont = $(".mapzoom_cont", $wrap);
 				settings = $wrap.prop("settings");
 
-				if (params == "zoomin") {
+				if (params === "zoomin") {
 					zoomIn();
 				}
-				if (params == "zoomout") {
+				if (params === "zoomout") {
 					zoomOut();
 				}
 			} else {
@@ -46,29 +45,27 @@
 				$cont = $("<div class='mapzoom_cont'>");
 				$("*", $wrap).appendTo($cont);
 				$cont.appendTo($wrap);
-				$cont.css({"cursor": "grab"});
 				$wrap.prop("has_mapzoom", true);
 
-				if (settings.fixSize) {
-					//var w = Math.max();
-					$wrap.width($wrap.width() + "px");
-					$wrap.height($wrap.height() + "px");
-				}
+				$wrap.width($wrap.width() + "px");
+				$wrap.height($wrap.height() + "px");
 
 				$wrap.prop("settings", settings);
 				$wrap.css({overflow: "hidden", position: "relative"});
 				if (settings.debug) {
+					//рисуем центр
 					$("<div>").css({position: "absolute", left: 0, top: "50%", "box-sizing": "border-box", "border-bottom": "1px dashed blue", width: "100%", height: "1px"}).appendTo($wrap);
 					$("<div>").css({position: "absolute", left: "50%", top: 0, "box-sizing": "border-box", "border-left": "1px dashed blue", width: "1px", height: "100%"}).appendTo($wrap);
 				}
 
 				$cont.on("mousedown touchstart", function (e) {
+					debug("down", e);
 					e.preventDefault();
-					ee = e;
 					$cont.addClass("dragging");
 					$("body").addClass("dragging");
 				});
 				$(window).on("mousedown touchstart", function (e) {
+					debug("window down", e);
 					e = e.originalEvent;
 					e = e.touches ? e.touches[0] : e;
 					startEvent = e;
@@ -76,19 +73,20 @@
 					oldY = parseInt($cont.css("margin-top"));
 				});
 				$(window).on("mouseup touchend", function (e) {
+					debug("window up", e);
 					e.preventDefault();
 					$cont.removeClass("dragging");
 					$("body").removeClass("dragging");
 				});
 				$(window).on("mousemove touchmove", function (e) {
+					debug("move", e);
 					if (!$("body").hasClass("dragging")) {
 						return;
 					}
-					ee = e;
 					e = e.originalEvent;
 					e = e.touches ? e.touches[0] : e;
-					console.log(e);
-					console.log("move: " + e.screenX + " " + e.screenY);
+
+					debug("move pos: " + e.screenX + " " + e.screenY);
 					var x = e.screenX - startEvent.screenX;
 					var y = e.screenY - startEvent.screenY;
 
@@ -101,9 +99,8 @@
 						y = 0;
 					}
 					var f = Math.round($cont.width() / $cont.parent().width());
-					f = f - 1;
-					var minX = f == 0 ? 0 : -parseInt($cont.css("width")) / (1 + 1 / f);
-					var minY = f == 0 ? 0 : -parseInt($cont.css("height")) / (1 + 1 / f);
+					var minX = f == 1 ? 0 : -parseInt($cont.css("width")) / (1 + 1 / (f - 1));
+					var minY = f == 1 ? 0 : -parseInt($cont.css("height")) / (1 + 1 / (f - 1));
 
 					if (x < minX) {
 						x = minX;
@@ -112,7 +109,6 @@
 						y = minY;
 					}
 
-					console.log(x, y, minX, minY);
 					$cont.css({
 						"margin-left": x + "px",
 						"margin-top": y + "px",
@@ -123,61 +119,71 @@
 
 			function getPos() {
 				var f = Math.round($cont.width() / $cont.parent().width());
-				f = f - 1;
-				if (f == 0) {
-					return {x: 0.5, y: 0.5};
-				}
-				var minX = f == 0 ? 0 : -parseInt($cont.css("width")) / (1 + 1 / f);
-				var minY = f == 0 ? 0 : -parseInt($cont.css("height")) / (1 + 1 / f);
-				var curX = parseInt($cont.css("margin-left"));
-				var curY = parseInt($cont.css("margin-top"));
-				return {x: curX / minX, y: curY / minY}
+				var curX = -parseInt($cont.css("margin-left")) / parseInt($cont.css("width")) + (1 / f / 2);
+				var curY = -parseInt($cont.css("margin-top")) / parseInt($cont.css("height")) + (1 / f / 2);
+				return {x: curX, y: curY}
 
 			}
 
 			function setPos(x, y) {
 				var f = Math.round($cont.width() / $cont.parent().width());
-				f = f - 1;
-				var minX = f == 0 ? 0 : -parseInt($cont.css("width")) / (1 + 1 / f);
-				var minY = f == 0 ? 0 : -parseInt($cont.css("height")) / (1 + 1 / f);
-				var curX = minX * x;
-				var curY = minY * y;
+				var curX = -((x - (1 / f / 2)) * parseInt($cont.css("width")));
+				var curY = -((y - (1 / f / 2)) * parseInt($cont.css("height")));
+				var minX = f == 1 ? 0 : -parseInt($cont.css("width")) / (1 + 1 / (f - 1));
+				var minY = f == 1 ? 0 : -parseInt($cont.css("height")) / (1 + 1 / (f - 1));
+				if (curX < minX) {
+					curX = minX;
+				}
+				if (curY < minY) {
+					curY = minY;
+				}
+				if (curX > 0) {
+					curX = 0;
+				}
+				if (curY > 0) {
+					curY = 0;
+				}
+				debug("setpos", curX, curY, minX, minY);
+
 				$cont.css("margin-left", curX + 'px')
 				$cont.css("margin-top", curY + 'px')
 			}
 
 			function zoomIn() {
 				debug("zoomIn");
-				var f = Math.round($cont.width() / $cont.parent().width()) * 100;
-				if (f >= settings.maxZoom) {
+				var zoom = Math.round($cont.width() / $cont.parent().width()) * 100;
+				if (zoom >= settings.maxZoom) {
 					return;
 				}
-				f = f + 100;
-				setZoom(f);
+				zoom = zoom + 100;
+				setZoom(zoom);
 			}
 
 			function zoomOut() {
 				debug("zoomOut");
-				var f = Math.round($cont.width() / $cont.parent().width()) * 100;
-				if (f <= 100) {
+				var zoom = Math.round($cont.width() / $cont.parent().width()) * 100;
+				if (zoom <= 100) {
 					return;
 				}
-				f = f - 100;
-				setZoom(f);
+				zoom = zoom - 100;
+				setZoom(zoom);
 			}
 
-			function setZoom(f) {
-				debug("setZoom: " + f);
+			function setZoom(zoom) {
+				debug("setZoom: " + zoom);
 				var pos = getPos();
-				$cont.width(f + "%").height(f + "%");
+				$cont.width(zoom + "%").height(zoom + "%");
 				setPos(pos.x, pos.y);
-				console.log(f, pos);
+				if (zoom > 100) {
+					$cont.css({"cursor": "grab"});
+				} else {
+					$cont.css({"cursor": ""});
+				}
 			}
 
-			function debug(s) {
-				console.log(settings);
+			function debug() {
 				if (settings.debug) {
-					console.log(window.performance.now() + ": " + s);
+					console.log(window.performance.now() + ": ", ...arguments);
 				}
 			}
 		});
